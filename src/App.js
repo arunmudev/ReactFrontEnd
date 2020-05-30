@@ -1,4 +1,7 @@
 import React from 'react';
+import Button from '@material-ui/core/Button';
+import { makeStyles } from '@material-ui/core/styles';
+import Icon from '@material-ui/core/Icon';
 import logo from './logo.svg';
 import './App.css';
 
@@ -10,17 +13,17 @@ function App() {
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+        <div id="button">
+          <Button variant="contained" color="primary" size="large">Exit </Button>
+          <Button variant="contained" color="primary" size="large">Add </Button>
+          <Button variant="contained" color="primary" size="large">Edit </Button>
+          <Button variant="contained" color="primary" size="large">Delete </Button>
+          </div>
+        </header>
     </div>
   );
+
 }
 
 export default App;
+
