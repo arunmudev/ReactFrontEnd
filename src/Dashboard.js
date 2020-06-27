@@ -1,5 +1,4 @@
 import React,{useState} from 'react';
-import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/styles';
 import Button from '@material-ui/core/Button';
 import { makeStyles } from '@material-ui/core/styles';
@@ -22,14 +21,19 @@ import MenuIcon from '@material-ui/icons/Menu';
 import TextField from '@material-ui/core/TextField';
 import Fab from '@material-ui/core/Fab';
 import AddIcon from '@material-ui/icons/Add';
-import EditIcon from '@material-ui/icons/Edit';
 import Tooltip from '@material-ui/core/Tooltip'
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import Snackbar from '@material-ui/core/Snackbar';
 import CloseIcon from '@material-ui/icons/Close';
-
+import Checkbox from '@material-ui/core/Checkbox';
+import ExpansionPanel from '@material-ui/core/ExpansionPanel';
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import FormControlLabel from '@material-ui/core/FormControlLabel'
+import FormGroup from '@material-ui/core/FormGroup'
 
 const useStyles =  makeStyles((theme)=>({
 	  table: {
@@ -87,12 +91,14 @@ const useStyles =  makeStyles((theme)=>({
       				width: theme.spacing(24),
       				height: theme.spacing(70)
 				    }
-				  },
+				  }
+				 
+				 
 }));
 
 
 function Dashboard() {
-  const [obj,setObj] = useState({issues:[],
+  const [obj,setObj] = useState({issues:[],  								  
                                  issueId : '', 
                                  issueTitle : '',
                                  assignee : '',
@@ -112,8 +118,20 @@ function Dashboard() {
   const [openUpdate,setOpenUpdate] = React.useState(false);
   const[openSnackBar,setOpenSnackBar] =  React.useState(false);
   const[closeSnackBar,setCloseSnackBar] =  React.useState(false);
+  const[response,setResponse] = useState("");
+  const[checked,setChecked] = useState({
+  	All : false,
+  	Low : false,
+  	Medium : false,
+  	High : false,
+  	New : false,
+  	InProgress : false,
+  	Resolved : false,
+  	Closed : false
+  });
   const openDialog = () =>{
-    	setOpen(true);
+    	defaultValueLoading();
+    	setOpen(true);    	
     }
     const closeDialog = () =>{
     	setOpen(false);
@@ -142,21 +160,82 @@ function Dashboard() {
     	setOpenSnackBar(false);
     }    
 
-   
-    
+  function filterLoading(event){   
+   	var checkboxStatus = event.target.checked;
+   	var targetCheckbox = event.target.value;   	    	
+    targetCheckbox === "Low" || targetCheckbox === "Medium" || targetCheckbox === "High" ? 
+    priorityFilterLoading(checkboxStatus,targetCheckbox) : statusFilterLoading(checkboxStatus,targetCheckbox);
+ }  
+
+    function priorityFilterLoading(checkboxStatus,targetCheckbox){      	
+   	var ar=[];
+   	if(targetCheckbox==="Low"){
+   	checkboxStatus===true?setChecked({Low:true}) : setChecked({Low:false});	
+   	}else if(targetCheckbox==="Medium"){
+   	checkboxStatus===true?setChecked({Medium:true}) : setChecked({Medium:false});	
+   	}else if(targetCheckbox==="High"){
+   	checkboxStatus===true?setChecked({High:true}) : setChecked({High:false});	
+   	}    
+    if(checkboxStatus===true){
+ 		for(var i=0;i<response.length;i++){
+    		if(response[i].priority === targetCheckbox){
+    			    ar.push(response[i]);    			    
+    		}
+    	}     
+    	setObj({issues : ar});  	
+    //	ar.length==0 ? alert("No data") : setObj({issues : ar});
+   }else if(checkboxStatus===false){
+ 		  for(var i=0;i<response.length;i++){    		
+    			    ar.push(response[i]);    			        		
+    	} 
+    	setObj({issues : ar});  
+        setChecked({All:true});
+   }
+ }  
+
+ function statusFilterLoading(checkboxStatus,targetCheckbox){      	
+   	var ar=[];
+   	if(targetCheckbox==="New"){
+   	checkboxStatus===true?setChecked({New:true}) : setChecked({New:false});	
+   	}else if(targetCheckbox==="InProgress"){
+   	checkboxStatus===true?setChecked({InProgress:true}) : setChecked({InProgress:false});	
+   	}else if(targetCheckbox==="Resolved"){
+   	checkboxStatus===true?setChecked({Resolved:true}) : setChecked({Resolved:false});	
+   	}else if(targetCheckbox==="Closed"){
+   	checkboxStatus===true?setChecked({Closed:true}) : setChecked({Closed:false});	
+   	}        
+    if(checkboxStatus===true){
+ 		for(var i=0;i<response.length;i++){
+    		if(response[i].issueStatus === targetCheckbox){
+    			    ar.push(response[i]);    			    
+    		}
+    	}   
+    	setObj({issues : ar});
+   }else if(checkboxStatus===false){
+ 		  for(var i=0;i<response.length;i++){    		
+    			    ar.push(response[i]);    			        		
+    	} 
+    	setObj({issues : ar});  
+    	setChecked({All:true});
+   }
+ }    
+
   function loadOperation(event){
-            axios.get("http://192.168.137.212:8080/servlet-spring-mvc/ServletDbController",{ 
+            axios.get("http://192.168.42.115:8080/servlet-spring-mvc/ServletDbController",{ 
 		   headers: {"Access-Control-Allow-Origin": "*",
 		                "content-Type": "application/json"},
 		   responseType: 'json'
 			   })
 	   .then(res =>{
 		   console.log(res);
+		   setResponse(res.data);
 		   setObj({issues : res.data});
+		   setChecked({all:true});
 	   });
   }
 
-  function insertOperation(event){			  
+  function insertOperation(event){	
+  		  
 			  var issues = {
 					  issueId : issueId,
 					  issueTitle :issueTitle,
@@ -165,7 +244,7 @@ function Dashboard() {
 					  issueStatus : 'New'
 			  };			  
               if(issueId!=""){
-			  axios.post("http://192.168.137.212:8080/servlet-spring-mvc/insert",issues,{				  			  
+			  axios.post("http://192.168.42.115:8080/servlet-spring-mvc/insert",issues,{				  			  
 			   headers: {"Access-Control-Allow-Origin": "*",
 				          "content-Type": "application/json"},
 				  responseType: 'json'
@@ -191,10 +270,10 @@ function Dashboard() {
 					  issueId : issueId,
 					  issueTitle : issueTitle,
 					  assignee : assignee,
-					  priority : priority
+					  priority : priority					  
 			  };			  
 			  if(issueId!=''){
-			  axios.post("http://192.168.137.212:8080/servlet-spring-mvc/update",issues,{				  			  
+			  axios.post("http://192.168.42.115:8080/servlet-spring-mvc/update",issues,{				  			  
 			   headers: {"Access-Control-Allow-Origin": "*",
 				          "content-Type": "application/json"},
 				  responseType: 'json'
@@ -216,7 +295,7 @@ function Dashboard() {
 					  issueId : issueId					  
 			  };			  
 
-			  axios.post("http://192.168.137.212:8080/servlet-spring-mvc/delete",issues,{				  			  
+			  axios.post("http://192.168.42.115:8080/servlet-spring-mvc/delete",issues,{				  			  
 			   headers: {"Access-Control-Allow-Origin": "*",
 				          "content-Type": "application/json"},
 				  responseType: 'json'
@@ -237,7 +316,7 @@ function Dashboard() {
 			issueId : issueId
 		}
 		if(issueId!=null){
-		axios.post("http://192.168.137.212:8080/servlet-spring-mvc/fetchData",issues,{				  			  
+		axios.post("http://192.168.42.115:8080/servlet-spring-mvc/fetchData",issues,{				  			  
 			   headers: {"Access-Control-Allow-Origin": "*",
 				          "content-Type": "application/json"},
 				  responseType: 'json'
@@ -285,16 +364,75 @@ function Dashboard() {
     	        </Toolbar>
     	      </AppBar>
     	    </div>,
-
-    	    <div id="filter-card" className={classes.filter}>
-
-    		<Paper elevation={5} >		     
-		    
-		     Filters
+    	    <div id="filter-priority" className={classes.filter}>
+    		<Paper elevation={5} >		     		    
+		    <ExpansionPanel>
+		    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+		    PRIORITY
+		    </ExpansionPanelSummary>
+		    <ExpansionPanelDetails>	
+		    <FormGroup>
+		    <FormControlLabel 
+		     control= {<Checkbox checked={checked.All} disabled={true}
+		     			 onChange={filterLoading} color="primary" value="All"/>}
+		     label="All"/>
+		     <FormControlLabel 	     
+		     control={<Checkbox checked={checked.Low}
+		     			 onChange={filterLoading} color="primary" value="Low"/>}
+		      label="Low"/>
+		     <FormControlLabel 	     
+		     control={<Checkbox 
+		     			 checked={checked.Medium}
+		     			 onChange={filterLoading}
+		     			 color="primary"
+		     			 value="Medium"/>}
+		       label="Medium"/>
+		     <FormControlLabel 	     
+		     control={<Checkbox 
+		     			 checked={checked.High}
+		     			 onChange={filterLoading}
+		     			 color="primary"
+		     			 value="High"/>}
+     			label="High"/>
+     		</FormGroup>	
+		    </ExpansionPanelDetails>
+		    </ExpansionPanel>
+    			     		    
+		    <ExpansionPanel>
+		    <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+		    STATUS
+		    </ExpansionPanelSummary>
+		    <ExpansionPanelDetails>	
+		    <FormGroup>
+		    <FormControlLabel 
+		     control= {<Checkbox checked={checked.New} 
+		     			 onChange={filterLoading} color="primary" value="New"/>}
+		     label="New"/>
+		     <FormControlLabel 	     
+		     control={<Checkbox checked={checked.InProgress}
+		     			 onChange={filterLoading} color="primary" value="InProgress"/>}
+		      label="In Progress"/>
+		     <FormControlLabel 	     
+		     control={<Checkbox 
+		     			 checked={checked.Resolved}
+		     			 onChange={filterLoading}
+		     			 color="primary"
+		     			 value="Resolved"/>}
+		       label="Resolved"/>
+		     <FormControlLabel 	     
+		     control={<Checkbox 
+		     			 checked={checked.Closed}
+		     			 onChange={filterLoading}
+		     			 color="primary"
+		     			 value="Closed"/>}
+     			label="Closed"/>
+     		
+     		</FormGroup>	
+		    </ExpansionPanelDetails>
+		    </ExpansionPanel>
 		    
 		     </Paper> 
     		</div>,
-
     	    <div id="id2" className={classes.grid}>
     		
 		      <Paper elevation={5} >
@@ -312,9 +450,9 @@ function Dashboard() {
     	          </TableRow>
     	        </TableHead>
     	        <TableBody>
-    	        {
+    	        {    	              
     	               obj.issues.map(
-    	            	issueslist =>
+    	            	(issueslist) =>
     	            	<TableRow key={issueslist.issueId} onClick={e => setIssueId(issueslist.issueId)}>
     	            	     <TableCell align="center">{issueslist.issueId}</TableCell>
     	            	     <TableCell>{issueslist.issueTitle}</TableCell>
@@ -323,8 +461,10 @@ function Dashboard() {
     	            	     <TableCell>{issueslist.issueStatus}</TableCell>
     	            	     <TableCell>{issueslist.lastUpdatedTime}</TableCell>
     	            	 </TableRow>
-    	            	)
-    	        }
+    	            	)  
+    	            	}
+    	            	
+    	        
     	        </TableBody>
     	      </Table>
     	    </TableContainer>
@@ -332,6 +472,7 @@ function Dashboard() {
     	    </Paper>
 
     	    </div>,
+    	    
     	    <div>
     	     <Tooltip title="Add" aria-label="add" placement="top-start">
     	    <Fab  onClick={openDialog} style={{float: 'right'}} color="primary" aria-label="add">
